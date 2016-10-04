@@ -1,4 +1,4 @@
-package com.github.ptitjes.jmh.report;
+package com.github.ptitjes.jmh.report.data;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
