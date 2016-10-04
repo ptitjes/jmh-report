@@ -5,7 +5,11 @@ package com.github.ptitjes.jmh.report.annotations;
  */
 public @interface Plot {
 
-	Axis horizontalAxis() default @Axis(type = AxisType.NORMAL);
+	Filter[] filters() default {};
 
-	Axis verticalAxis() default @Axis(type = AxisType.NORMAL);
+	String perParam() default "";
+
+	Axis horizontalAxis() default @Axis;
+
+	Axis verticalAxis() default @Axis;
 }

@@ -6,4 +6,6 @@ package com.github.ptitjes.jmh.report.annotations;
 public @interface Axis {
 
 	AxisType type() default AxisType.NORMAL;
+
+	String[] params() default {};
 }

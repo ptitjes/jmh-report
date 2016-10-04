@@ -24,13 +24,13 @@ public class Main {
 
 			Optional<String> regenReport = reportCmdOptions.getRegenReport();
 			if (regenReport.hasValue()) {
-				new Report().makeReportFromResultFile(regenReport.get());
+				new ReportGenerator().makeReportFromResultFile(regenReport.get());
 				return;
 			}
 
 			CommandLineOptions cmdOptions = new CommandLineOptions(args);
 
-			String date = Report.reportDate();
+			String date = ReportGenerator.reportDate();
 
 			Options options = new OptionsBuilder()
 					.parent(cmdOptions)
@@ -67,7 +67,7 @@ public class Main {
 
 			try {
 				Collection<RunResult> runResults = runner.run();
-				new Report().makeReport("results/" + date + ".pdf", runResults);
+				new ReportGenerator().makeReport("results/" + date + ".pdf", runResults);
 			} catch (NoBenchmarksException e) {
 				System.err.println("No matching benchmarks. Miss-spelled regexp?");
 

@@ -51,7 +51,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Didier Villevalois
  */
-public class Report {
+public class ReportGenerator {
 
 	public static final int BASE_FONT_SIZE = 9;
 	public static final int BIG_FONT_SIZE = 11;
@@ -69,7 +69,7 @@ public class Report {
 	public void makeReportFromResultFile(String resultFilename) throws IOException {
 		String outputFilename = resultFilename.substring(0, resultFilename.length() - ".json".length()) + ".pdf";
 		List<RunResultData> allRunResultData = new JSONResultParser().parseFrom(new File(resultFilename));
-		new Report().makeReport(outputFilename, allRunResultData);
+		new ReportGenerator().makeReport(outputFilename, allRunResultData);
 	}
 
 	public void makeReport(String filename, Collection<RunResult> runResults) throws IOException {

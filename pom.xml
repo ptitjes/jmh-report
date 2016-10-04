@@ -35,7 +35,7 @@
 			<scope>provided</scope>
 		</dependency>
 
-		<!-- Report Dependencies -->
+		<!-- ReportGenerator Dependencies -->
 		<dependency>
 			<groupId>com.itextpdf</groupId>
 			<artifactId>itextpdf</artifactId>
