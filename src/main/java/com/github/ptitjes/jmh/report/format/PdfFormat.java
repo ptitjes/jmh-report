@@ -6,6 +6,7 @@ import com.github.ptitjes.jmh.report.chart.ChartGenerator;
 import com.github.ptitjes.jmh.report.chart.PlotConfiguration;
 import com.github.ptitjes.jmh.report.data.BenchmarkResultData;
 import com.github.ptitjes.jmh.report.data.RunResultData;
+import com.github.ptitjes.jmh.report.options.AnnotationReader;
 import com.itextpdf.awt.FontMapper;
 import com.itextpdf.awt.PdfGraphics2D;
 import com.itextpdf.text.*;
@@ -23,10 +24,12 @@ import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 /**
  * @author Didier Villevalois
@@ -34,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 public class PdfFormat implements ReportFormat {
 
 	private final RenderingConfiguration renderingConfiguration;
+	private final AnnotationReader annotationReader = new AnnotationReader();
 
 	public PdfFormat(RenderingConfiguration renderingConfiguration) {
 		this.renderingConfiguration = renderingConfiguration;
@@ -60,13 +64,20 @@ public class PdfFormat implements ReportFormat {
 				chapter.add(makeParametersParagraph(perParamsResults));
 				chapter.add(makeTableParagraph(paramKeys, timeUnit, perParamsResults));
 
-				PlotConfiguration plotConfiguration = new PlotConfiguration();
-				plotConfiguration.orientation = Orientation.VERTICAL;
-				plotConfiguration.type = PlotType.BARS;
-				plotConfiguration.logScale = true;
-//				plotConfiguration.axisParam = "implementation";
-
-				chapter.add(makeChart(writer, document, benchmarkResult, plotConfiguration));
+				List<PlotConfiguration> configurations = annotationReader.makePlotConfigurationsFor(longName);
+				for (PlotConfiguration configuration : configurations) {
+					String perParam = configuration.perParam;
+					if (perParam != null) {
+						Set<String> values = collectParamValues(benchmarkResult, perParam);
+						for (String value : values) {
+							configuration.paramFilters.put(perParam, Pattern.compile(value));
+							chapter.add(makeChart(writer, document, benchmarkResult, configuration));
+						}
+						configuration.paramFilters.put(perParam, null);
+					} else {
+						chapter.add(makeChart(writer, document, benchmarkResult, configuration));
+					}
+				}
 
 				chapter.add(Chunk.NEXTPAGE);
 				document.add(chapter);
@@ -75,6 +86,14 @@ public class PdfFormat implements ReportFormat {
 			e.printStackTrace();
 		}
 		document.close();
+	}
+
+	private Set<String> collectParamValues(BenchmarkResultData benchmarkResult, String perParam) {
+		LinkedHashSet<String> values = new LinkedHashSet<>();
+		for (Map.Entry<BenchmarkParams, RunResultData> entry : benchmarkResult.perParamsResults.entrySet()) {
+			values.add(entry.getKey().getParam(perParam));
+		}
+		return values;
 	}
 
 	private Chapter makeChapter(String longName, int number) {

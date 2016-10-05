@@ -27,6 +27,7 @@ import java.awt.*;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * @author Didier Villevalois
@@ -141,7 +142,12 @@ public class ChartGenerator {
 
 		RenderingHints renderingHints = chart.getRenderingHints();
 		if (plotConfiguration.type == PlotType.BARS && plotConfiguration.orientation == Orientation.HORIZONTAL) {
-			renderingHints.put(MIN_HEIGHT, benchmarkResult.perParamsResults.size() * 12 + 80);
+			// Stranger computations to estimates the height of the chart
+			renderingHints.put(MIN_HEIGHT,
+					dataset.getColumnCount() * dataset.getRowCount() * (renderingConfiguration.baseFontSize + 5) +
+							dataset.getRowCount() / 4 * (renderingConfiguration.baseFontSize + 15) +
+							(renderingConfiguration.bigFontSize + 20)
+			);
 		}
 
 		return chart;
@@ -162,9 +168,16 @@ public class ChartGenerator {
 		if (axisParamKey != null) seriesParamKeys.remove(axisParamKey);
 
 		DefaultStatisticalCategoryDataset dataset = new DefaultStatisticalCategoryDataset();
+		collectResults:
 		for (Map.Entry<BenchmarkParams, RunResultData> perParamsResult : result.perParamsResults.entrySet()) {
 			BenchmarkParams params = perParamsResult.getKey();
 			RunResultData.Results primaryResults = perParamsResult.getValue().primaryResults;
+
+			for (Map.Entry<String, Pattern> filter : plotConfiguration.paramFilters.entrySet()) {
+				String paramKey = filter.getKey();
+				Pattern pattern = filter.getValue();
+				if (!pattern.matcher(params.getParam(paramKey)).matches()) continue collectResults;
+			}
 
 			String axisParam = params.getParam(axisParamKey);
 
