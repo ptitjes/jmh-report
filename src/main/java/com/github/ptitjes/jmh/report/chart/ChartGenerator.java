@@ -5,7 +5,6 @@ import com.github.ptitjes.jmh.report.annotations.PlotType;
 import com.github.ptitjes.jmh.report.data.BenchmarkResultData;
 import com.github.ptitjes.jmh.report.data.RunResultData;
 import com.github.ptitjes.jmh.report.format.RenderingConfiguration;
-import com.itextpdf.text.Font;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.*;
@@ -21,14 +20,13 @@ import org.jfree.data.statistics.DefaultStatisticalCategoryDataset;
 import org.jfree.data.statistics.StatisticalCategoryDataset;
 import org.jfree.ui.RectangleInsets;
 import org.jfree.ui.TextAnchor;
+import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.infra.BenchmarkParams;
 
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Paint;
-import java.awt.RenderingHints;
+import java.awt.*;
 import java.text.NumberFormat;
 import java.util.*;
+import java.util.List;
 
 /**
  * @author Didier Villevalois
@@ -54,6 +52,9 @@ public class ChartGenerator {
 		if (axisParamKey != null) seriesParamKeys.remove(axisParamKey);
 
 		String timeUnit = benchmarkResult.timeUnit;
+
+		Mode mode = benchmarkResult.perParamsResults.entrySet().iterator().next().getKey().getMode();
+		String readingHelp = mode == Mode.AverageTime ? "(◀ Less is better)" : "(More is better ▶)";
 
 		StatisticalCategoryDataset dataset = makeDataset(benchmarkResult);
 
@@ -89,20 +90,20 @@ public class ChartGenerator {
 			}
 
 			renderer.setBaseItemLabelsVisible(true);
-			renderer.setBaseItemLabelFont(renderer.getBaseItemLabelFont().deriveFont(Font.NORMAL, renderingConfiguration.baseFontSize));
+			renderer.setBaseItemLabelFont(new Font(renderingConfiguration.font, Font.PLAIN, renderingConfiguration.baseFontSize));
 			renderer.setBaseItemLabelPaint(Color.white);
 			renderer.setErrorIndicatorStroke(new BasicStroke(0));
 			renderer.setItemMargin(0);
 			plot.setRenderer(renderer);
 
-			renderer.setBaseLegendTextFont(renderer.getBaseItemLabelFont().deriveFont(Font.NORMAL, renderingConfiguration.baseFontSize));
+			renderer.setBaseLegendTextFont(new Font(renderingConfiguration.font, Font.PLAIN, renderingConfiguration.baseFontSize));
 		} else {
 			StatisticalLineAndShapeRenderer renderer = new StatisticalLineAndShapeRenderer();
 			renderer.setBaseShapesVisible(true);
 			renderer.setErrorIndicatorStroke(new BasicStroke(0));
 			plot.setRenderer(renderer);
 
-			renderer.setBaseLegendTextFont(renderer.getBaseItemLabelFont().deriveFont(Font.NORMAL, renderingConfiguration.baseFontSize));
+			renderer.setBaseLegendTextFont(new Font(renderingConfiguration.font, Font.PLAIN, renderingConfiguration.baseFontSize));
 		}
 
 		populateColors(plot);
@@ -121,7 +122,7 @@ public class ChartGenerator {
 			LogarithmicAxis rangeAxis = new LogarithmicAxis(timeUnit);
 			configureAxis(rangeAxis);
 
-			rangeAxis.setLabel(timeUnit);
+			rangeAxis.setLabel(timeUnit + " " + readingHelp);
 			rangeAxis.setLabelInsets(RectangleInsets.ZERO_INSETS);
 			rangeAxis.setMinorTickMarksVisible(true);
 			rangeAxis.setAutoRange(true);
@@ -132,7 +133,7 @@ public class ChartGenerator {
 			ValueAxis rangeAxis = plot.getRangeAxis();
 			configureAxis(rangeAxis);
 
-			rangeAxis.setLabel(timeUnit);
+			rangeAxis.setLabel(timeUnit + " " + readingHelp);
 			rangeAxis.setLabelInsets(RectangleInsets.ZERO_INSETS);
 			rangeAxis.setAutoRange(true);
 			configureAxis(rangeAxis);
@@ -181,9 +182,9 @@ public class ChartGenerator {
 	}
 
 	private void configureAxis(Axis axis) {
-		axis.setLabelFont(axis.getLabelFont().deriveFont(Font.BOLD, renderingConfiguration.bigFontSize));
+		axis.setLabelFont(new Font(renderingConfiguration.font, Font.BOLD, renderingConfiguration.bigFontSize));
 		axis.setLabelInsets(RectangleInsets.ZERO_INSETS);
-		axis.setTickLabelFont(axis.getTickLabelFont().deriveFont(Font.NORMAL, renderingConfiguration.baseFontSize));
+		axis.setTickLabelFont(new Font(renderingConfiguration.font, Font.PLAIN, renderingConfiguration.baseFontSize));
 	}
 
 	private static final Paint[] PAINTS = new Paint[]{

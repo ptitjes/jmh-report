@@ -6,12 +6,12 @@ import com.github.ptitjes.jmh.report.chart.ChartGenerator;
 import com.github.ptitjes.jmh.report.chart.PlotConfiguration;
 import com.github.ptitjes.jmh.report.data.BenchmarkResultData;
 import com.github.ptitjes.jmh.report.data.RunResultData;
+import com.itextpdf.awt.FontMapper;
 import com.itextpdf.awt.PdfGraphics2D;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
 import com.itextpdf.text.pdf.draw.LineSeparator;
 import org.jfree.chart.JFreeChart;
-import org.jfree.chart.plot.PlotOrientation;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.infra.BenchmarkParams;
 import org.openjdk.jmh.infra.IterationParams;
@@ -85,52 +85,52 @@ public class PdfFormat implements ReportFormat {
 		LineSeparator separator = new LineSeparator();
 		separator.setOffset(14);
 		Paragraph separatorParagraph = new Paragraph(new Chunk(separator));
-		separatorParagraph.setSpacingAfter(-18);
+		separatorParagraph.setSpacingAfter(-15);
 		chapter.add(separatorParagraph);
 		return chapter;
 	}
 
 	private Paragraph makeParametersParagraph(Map<BenchmarkParams, RunResultData> perParamsResults) {
 		Paragraph parametersParagraph = new Paragraph();
+		parametersParagraph.setLeading(0, .9f);
+		parametersParagraph.setIndentationLeft(12f);
+
 		BenchmarkParams params = perParamsResults.entrySet().iterator().next().getKey();
 		if (params != null) {
-			parametersParagraph.add(makeHeaderParagraph("", org.openjdk.jmh.util.Version.getVersion()));
+			addTextWithHeader(parametersParagraph, "", org.openjdk.jmh.util.Version.getVersion());
 
-			parametersParagraph.add(makeHeaderParagraph("Forks", "" + params.getForks() + " " + getForksString(params.getForks())));
+			addTextWithHeader(parametersParagraph, "Forks", "" + params.getForks() + " " + getForksString(params.getForks()));
 
 			IterationParams warmup = params.getWarmup();
 			if (warmup.getCount() > 0) {
-				parametersParagraph.add(makeHeaderParagraph("Warmup", "" + warmup.getCount() + " iterations, " + warmup.getTime() + " each" + (warmup.getBatchSize() <= 1 ? "" : ", " + warmup.getBatchSize() + " calls per op")));
+				addTextWithHeader(parametersParagraph, "Warmup", "" + warmup.getCount() + " iterations, " + warmup.getTime() + " each" + (warmup.getBatchSize() <= 1 ? "" : ", " + warmup.getBatchSize() + " calls per op"));
 			} else {
-				parametersParagraph.add(makeHeaderParagraph("Warmup", "<none>"));
+				addTextWithHeader(parametersParagraph, "Warmup", "<none>");
 			}
 
 			IterationParams measurement = params.getMeasurement();
 			if (measurement.getCount() > 0) {
-				parametersParagraph.add(makeHeaderParagraph("Measurement", "" + measurement.getCount() + " iterations, " + measurement.getTime() + " each" + (measurement.getBatchSize() <= 1 ? "" : ", " + measurement.getBatchSize() + " calls per op")));
+				addTextWithHeader(parametersParagraph, "Measurement", "" + measurement.getCount() + " iterations, " + measurement.getTime() + " each" + (measurement.getBatchSize() <= 1 ? "" : ", " + measurement.getBatchSize() + " calls per op"));
 			} else {
-				parametersParagraph.add(makeHeaderParagraph("Measurement", "<none>"));
+				addTextWithHeader(parametersParagraph, "Measurement", "<none>");
 			}
 
 			TimeValue timeout = params.getTimeout();
 			if (timeout != null) {
 				boolean timeoutWarning = timeout.convertTo(TimeUnit.NANOSECONDS) <= measurement.getTime().convertTo(TimeUnit.NANOSECONDS) || timeout.convertTo(TimeUnit.NANOSECONDS) <= warmup.getTime().convertTo(TimeUnit.NANOSECONDS);
-				parametersParagraph.add(makeHeaderParagraph("Timeout", "" + timeout + " per iteration" + (timeoutWarning ? ", ***WARNING: The timeout might be too low!***" : "")));
+				addTextWithHeader(parametersParagraph, "Timeout", "" + timeout + " per iteration" + (timeoutWarning ? ", ***WARNING: The timeout might be too low!***" : ""));
 			}
 
-			parametersParagraph.add(makeHeaderParagraph("Threads", "" + params.getThreads() + " " + getThreadsString(params.getThreads()) + (params.shouldSynchIterations() ? ", will synchronize iterations" : (params.getMode() == Mode.SingleShotTime ? "" : ", ***WARNING: Synchronize iterations are disabled!***"))));
-			parametersParagraph.add(makeHeaderParagraph("Benchmark mode", params.getMode().longLabel()));
+			addTextWithHeader(parametersParagraph, "Threads", "" + params.getThreads() + " " + getThreadsString(params.getThreads()) + (params.shouldSynchIterations() ? ", will synchronize iterations" : (params.getMode() == Mode.SingleShotTime ? "" : ", ***WARNING: Synchronize iterations are disabled!***")));
+			addTextWithHeader(parametersParagraph, "Benchmark mode", params.getMode().longLabel());
 		}
 		return parametersParagraph;
 	}
 
-	private Paragraph makeHeaderParagraph(String name, String content) {
-		Chunk chunk = new Chunk(name + (name.equals("") ? "" : ": "), boldFont());
-		Paragraph paragraph = new Paragraph(chunk);
-		paragraph.setSpacingAfter(-4);
-		paragraph.setIndentationLeft(16);
-		paragraph.add(new Chunk(content, normalFont()));
-		return paragraph;
+	private void addTextWithHeader(Paragraph parametersParagraph, String name, String content) {
+		parametersParagraph.add(new Chunk(name + (name.equals("") ? "" : ": "), boldFont()));
+		parametersParagraph.add(new Chunk(content, normalFont()));
+		parametersParagraph.add(Chunk.NEWLINE);
 	}
 
 	private static String getForksString(int f) {
@@ -213,8 +213,25 @@ public class PdfFormat implements ReportFormat {
 		float width = document.right() - document.left();
 		float height = minHeight != null ? minHeight : document.top() - document.bottom() - 20;
 
+		FontMapper fontMapper = new FontMapper() {
+			public BaseFont awtToPdf(java.awt.Font font) {
+				try {
+					return BaseFont.createFont(renderingConfiguration.fontPath, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+				} catch (DocumentException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				return null;
+			}
+
+			public java.awt.Font pdfToAwt(BaseFont font, int size) {
+				return null;
+			}
+		};
+
 		PdfTemplate template = contentByte.createTemplate(width, height);
-		Graphics2D graphics2d = new PdfGraphics2D(template, width, height);
+		Graphics2D graphics2d = new PdfGraphics2D(template, width, height, fontMapper);
 		Rectangle2D rectangle2d = new Rectangle2D.Double(0, 0, width, height);
 		chart.draw(graphics2d, rectangle2d);
 		graphics2d.dispose();
@@ -225,20 +242,18 @@ public class PdfFormat implements ReportFormat {
 	}
 
 	private Font chapterFont() {
-		return FontFactory.getFont(renderingConfiguration.font, renderingConfiguration.headerFontSize, Font.BOLD);
+		return FontFactory.getFont(renderingConfiguration.fontPath, renderingConfiguration.headerFontSize, Font.BOLD);
 	}
 
 	private Font normalFont() {
-		return FontFactory.getFont(renderingConfiguration.font, renderingConfiguration.baseFontSize, Font.NORMAL);
+		return FontFactory.getFont(renderingConfiguration.fontPath, renderingConfiguration.baseFontSize, Font.NORMAL);
 	}
 
 	private Font boldFont() {
-		return FontFactory.getFont(renderingConfiguration.font, renderingConfiguration.baseFontSize, Font.BOLD);
+		return FontFactory.getFont(renderingConfiguration.fontPath, renderingConfiguration.baseFontSize, Font.BOLD);
 	}
 
 	private Font tableHeaderFont() {
-		Font font = FontFactory.getFont(renderingConfiguration.font, renderingConfiguration.baseFontSize, Font.NORMAL);
-		font.setColor(BaseColor.WHITE);
-		return font;
+		return FontFactory.getFont(renderingConfiguration.fontPath, renderingConfiguration.baseFontSize, Font.NORMAL, BaseColor.WHITE);
 	}
 }

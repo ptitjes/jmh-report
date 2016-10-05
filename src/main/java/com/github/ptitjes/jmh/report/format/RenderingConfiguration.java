@@ -9,5 +9,6 @@ public class RenderingConfiguration {
 	public int bigFontSize = 11;
 	public int headerFontSize = 14;
 
-	public String font = "Helvetica";
+	public String font = "FreeSans";
+	public String fontPath = "/fonts/FreeSans.ttf";
 }
