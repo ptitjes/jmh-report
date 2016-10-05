@@ -5,5 +5,5 @@ package com.github.ptitjes.jmh.report.annotations;
  */
 public enum Orientation {
 	VERTICAL,
-	HORIZONTAL
+	HORIZONTAL,
 }

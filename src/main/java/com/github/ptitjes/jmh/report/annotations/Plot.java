@@ -5,11 +5,15 @@ package com.github.ptitjes.jmh.report.annotations;
  */
 public @interface Plot {
 
-	Filter[] filters() default {};
-
 	String perParam() default "";
 
-	Axis horizontalAxis() default @Axis;
+	Filter[] filters() default {};
 
-	Axis verticalAxis() default @Axis;
+	String axisParam() default "";
+
+	PlotType type() default PlotType.BARS;
+
+	Orientation orientation() default Orientation.VERTICAL;
+
+	boolean logScale() default false;
 }

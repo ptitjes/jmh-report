@@ -4,6 +4,7 @@ import com.github.ptitjes.jmh.report.data.BenchmarkResultData;
 import com.github.ptitjes.jmh.report.data.JSONResultParser;
 import com.github.ptitjes.jmh.report.data.RunResultData;
 import com.github.ptitjes.jmh.report.format.PdfFormat;
+import com.github.ptitjes.jmh.report.format.RenderingConfiguration;
 import org.openjdk.jmh.infra.BenchmarkParams;
 import org.openjdk.jmh.results.BenchmarkResult;
 import org.openjdk.jmh.results.IterationResult;
@@ -106,7 +107,8 @@ public class ReportGenerator {
 			benchmarkResults.add(benchmarkResult);
 		}
 
-		new PdfFormat().makeReport(filename, benchmarkResults);
+		new PdfFormat(new RenderingConfiguration())
+				.makeReport(filename, benchmarkResults);
 	}
 
 	public static String reportDate() {
